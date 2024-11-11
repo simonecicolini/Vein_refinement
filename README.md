@@ -1,10 +1,12 @@
 # Vein_refinement
-This repository contains source codes to simulate the signalling network involved in vein refinement and described in the paper "Signalling-dependent refinement of cell fate choice during tissue remodelling".
+This repository contains python codes to simulate the signalling network involved in vein refinement and described in the paper "Signalling-dependent refinement of cell fate choice during tissue remodelling".
 ***
-**Simulation on the wing tissue template**
+**Simulation on a wing tissue template**
 
-The script ```Wing_simulation.py``` perform a simulation on the experimental wing. To run ```Wing_simulation.py``` one has to import ```tissue_miner.py``` and ```tissue_miner_tools.py```, which contain classes and functions to extract data from segmented wing movies. Data from wing movies can be found in the folder "wing_movies" at https://zenodo.org/record/7625645#.Y-oULi8w3gh, which contains both wild-type and Dumpy mutant wings. There are lines of code that can be commented/uncommented to simulate wild-type/dumpy mutant/optogenetic veins. To run the simulation it is sufficient to save the folder "wing_movies", ```tissue_miner_tools.py```, and ```tissue_miner.py``` in the same directory as ```Wing_simulation.py```.
+The scripts  ```Run_sim_WT_wing.py``` and ```Run_sim_Dumpy_wing.py``` perform a simulation on segmented wild-type and dumpy mutant wings tissue template. To run ```Run_sim_WT_wing.py``` one has to import the cell class ```cell_wing.py```, ```tissue_miner.py``` and ```tissue_miner_tools.py```, which contain classes and functions to extract data from segmented wing movies. Data from wing movies can be found in the folder "wing_movies" at https://zenodo.org/record/7625645#.Y-oULi8w3gh, which contains wild-type and Dumpy mutant wings. There are lines of code that can be commented/uncommented to simulate optogenetic veins. To run the simulation it is sufficient to save the folder containing the segmented movie, ```tissue_miner_tools.py```, ```cell_wing.py```, and ```tissue_miner.py``` in the same directory as ```Wing_simulation.py``` or ```Run_sim_Dumpy_wing.py```.
 ***
-**Simulation on hexagonal cells**
+**Simulation on hexagonal lattice**
 
-The script ```Hexagon_simulation.py``` perform a simulation of vein refinement on a hexagonal lattice. It does not require importing other files and can be readily run. 
+The scripts ```cell.py```,  ```run_sim.py```,  ```plot_functions.py```, and ```generate_graphs.py```, are used to simulate of vein refinement on a hexagonal lattice.  ```run_sim.py``` contains functions to update cell varibales at each iteration of the simulation. ```cell.py``` defines the cell class. ```plot_functions.py``` contains functions to display hexagonal packings, animations, and profiles of different quantities. ```generate_graphs.py``` calls functions defined in these files to run simulations of Wild-Type, optogenetic cross veins, Delta DN, Nintra, and TkvCA conditions.
+
+
