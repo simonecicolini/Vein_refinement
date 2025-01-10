@@ -11,3 +11,5 @@ The scripts ```cell.py```,  ```run_sim.py```,  ```plot_functions.py```, and ```g
 
 Analogously, the scripts ```run_sim_NDtrans_degradation.py```,  ```plot_functions_NDtrans_degradation.py```, and ```generate_graphs_NDtrans_degradation.py``` can be used to simulate the version of the model with degradation of intracellular Notch and Delta-Notch complexes after cleavage.
 
+The script ```activation_2nd_neighbours.py``` run simulations of the version of the model with activation extended to second nearest neighbours.
+
