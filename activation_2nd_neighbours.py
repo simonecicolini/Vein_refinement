@@ -106,7 +106,7 @@ S0=0.4
 condition='regular_stripe' #smooth initial condition of the provein domain
 #condition='rough_stripe'  #noisy initial condition of the provein domain
 
-#the parameter alpha (0 ≤ alpha ≤ 1) is the relative weight of signalling to second vs first nearest neighbours
+#the parameter alpha (0 ≤ alpha ≤ 1) is the relative weight of signalling to second vs first nearest neighbours (called "range" in FigS4J-J')
 #the parameter J is the is the overall magnitude of signalling, defined such that 6J is the overall contribution of the sum on first and second nearest neighbours, when all cells have values u = 1
 for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
     for J in [0, 0.015, 0.03, 0.045, 0.06, 0.15]:
@@ -389,7 +389,7 @@ for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
         
         #u final frame
         fig,ax=plt.subplots()
-        p= PatchCollection(patches, cmap = mpl.cm.get_cmap('plasma') , match_original=True)
+        p= PatchCollection(patches, cmap = cm.plasma , match_original=True)
         ax.add_collection(p)
         p.set_array(np.array(u_saved[-1]))
         p.set_clim([-0.1, 1.1])
@@ -416,7 +416,7 @@ for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
         # times_to_plot=[i*6 for i in range(40)] #60 minutes is 1 hour
         # for i in times_to_plot:
         #     fig,ax=plt.subplots()
-        #     p= PatchCollection(patches, cmap = mpl.cm.get_cmap('plasma') , match_original=True)
+        #     p= PatchCollection(patches, cmap = cm.plasma , match_original=True)
         #     ax.add_collection(p)
         #     p.set_array(np.array(u_saved[i]))
         #     p.set_clim([-0.1, 1.1])

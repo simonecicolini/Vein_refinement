@@ -77,10 +77,12 @@ def next_iter(u_values,
               JA,
               N_low,
               N_high,
+              D_high,
               Sstar,
               alphaS,
               S0,
               noDelta,
+              DeltaFixed,
               extraSignal,
               extraSignalValue,
               extraVeinActivation,
@@ -116,14 +118,17 @@ def next_iter(u_values,
         notch_delta_trans = Ktrans/6*notch_free*nearest_delta_free_sum
         #total delta and total notch
         #basic behaviour
-        if not noDelta:
-            new_delta_tot = delta_tot + ffact_Notch*(u-delta_tot)
-        else:
+        if (not noDelta) and (not DeltaFixed):
+            new_delta_tot = delta_tot + ffact_Notch*(D_high* u*(u>0)-delta_tot)
+        if noDelta:
             new_delta_tot = delta_tot + ffact_Notch*(0-delta_tot)
+        if DeltaFixed:
+            new_delta_tot = delta_tot 
+            
         new_notch_tot = notch_tot + ffact_Notch*(N_low-notch_tot)
         signal =  notch_delta_trans 
         if extraSignal:
-            signal += extraSignalValue #+0.4*u
+            signal += extraSignalValue 
         #extra production if high notch signalling
         new_notch_tot += ffact_Notch *(N_high-N_low)* (1+np.tanh((signal-Sstar)/alphaS))/2.0
         new_u= u+ffact_u*(-u*(u-1)*(u-r)-JI *(signal>S0)*(u>0)* signal + JA  *(nearest_u_sum-6*u))
@@ -150,10 +155,11 @@ def run_sim(cells,
             r, JI, JA, 
             Kcis, Ktrans, 
             tau_u, tau_Notch, tau_reporter,
-            N_low, N_high,
+            N_low, N_high, D_high,
             Sstar, alphaS, S0,
             t_0, dt, N_times, fraction_saved,
             noDelta=False,
+            DeltaFixed=False,
             extraSignal=False,
             extraSignalValue=0,
             extraVeinActivation=False,
@@ -256,10 +262,12 @@ def run_sim(cells,
                                               JA,
                                               N_low,
                                               N_high,
+                                              D_high,
                                               Sstar,
                                               alphaS,
                                               S0,
                                               noDelta,
+                                              DeltaFixed,
                                               extraSignal,
                                               extraSignalValue,
                                               extraVeinActivation,
