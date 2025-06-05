@@ -5,7 +5,7 @@ from cell import cell
 import matplotlib as mpl
 import matplotlib.cm as cm
 from matplotlib.collections import PatchCollection
-from matplotlib import animation
+import matplotlib.image as mpimg
 from numba import njit
 import os
 # =============================================================================
@@ -67,14 +67,27 @@ for k, c in cells.items():
                  ( N_y*((k-N_y)//N_y)+(k-N_y)%N_y)%(N_x*N_y),
                   (N_y*((k-N_y)//N_y)+(k-1-N_y)%N_y)%(N_x*N_y)]
         
-     
+   
+# construct list of second neighbours
+for k, c in cells.items():
+   first_neighbours=c.neighbours
+   second_neighbours=[]
+   for neighbour_index in first_neighbours:
+       neighbours_of_the_neighbour = cells[neighbour_index].neighbours
+       for neighbour_of_the_neighbour in neighbours_of_the_neighbour:
+           if (neighbour_of_the_neighbour != k) and (neighbour_of_the_neighbour not in first_neighbours):
+               second_neighbours.append(neighbour_of_the_neighbour)
+   c.second_neighbours= np.unique(second_neighbours)
+               
+    
+ 
 # =============================================================================
 # RUNNING
 # =============================================================================
 
 dt = 0.0167 #time step in hours (~ 1 minute)
 t_0 = 21 #initial time  in hours
-N_times = 16001
+N_times = 50001
 fraction_saved = 10
 print('total simulation time: ', dt*N_times)
 #distance between cells in um
@@ -93,7 +106,6 @@ Ktrans = 1800
 JI = 0.35
 r = 0.5
 
-JA=0.015
 # Notch production
 Nlow = 0.3
 Nhigh=2.2
@@ -103,16 +115,17 @@ Sstar = 0.25 #signal level necessary for notch activation
 alpha_S= 0.025 #signal sensitivity
 S0=0.4
 
-condition='regular_stripe' #smooth initial condition of the provein domain
-#condition='rough_stripe'  #noisy initial condition of the provein domain
+#comment/uncomment one of the two following lines to set the initial condition
+condition='regular_stripe' #smooth initial condition of the provein domain (FigS4J)
+#condition='rough_stripe'  #noisy initial condition of the provein domain (FigS4J')
 
 #the parameter alpha (0 ≤ alpha ≤ 1) is the relative weight of signalling to second vs first nearest neighbours (called "range" in FigS4J-J')
-#the parameter J is the is the overall magnitude of signalling, defined such that 6J is the overall contribution of the sum on first and second nearest neighbours, when all cells have values u = 1
+#the parameter J is the is the overall magnitude of signalling, defined such that 6J is the overall contribution of the sum on first and second nearest neighbours, when all cells have u = 1
 for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
     for J in [0, 0.015, 0.03, 0.045, 0.06, 0.15]:
-        J1=J/(1+2*alpha) #interaction strength among nearest neighbours (alpha*J1 is the interaction strength among second neighbours)
-        
-        parameters = condition+'_JI='+str(JI)+'r='+str(r)+'tau_u='+str(tau_u)+'_tauDN='+str(tau_Notch)+'_totTime='+str(dt*N_times)+'h/Kcis='+str(Kcis)+'Ktrans='+str(Ktrans)+'_Sstar='+str(Sstar)+'alphaS='+str(alpha_S)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'/J='+str(J)+'/range='+str(alpha)
+        JA1=J/(1+2*alpha) #interaction strength among nearest neighbours (alpha*J1 is the interaction strength among second neighbours)
+        JAprime=JA1
+        parameters = 'Phase_diagram_FigS4J-J\'/'+condition+'_JI='+str(JI)+'r='+str(r)+'tau_u='+str(tau_u)+'_tauDN='+str(tau_Notch)+'_totTime='+str(dt*N_times)+'h/Kcis='+str(Kcis)+'Ktrans='+str(Ktrans)+'_Sstar='+str(Sstar)+'alphaS='+str(alpha_S)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'/J='+str(J)+'/range='+str(alpha)
         
         if not os.path.exists('./'+parameters):
             os.makedirs('./'+parameters)
@@ -268,7 +281,7 @@ for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
                 signal =  notch_delta_trans 
                 #extra production if high notch signalling
                 new_notch_tot += ffact_Notch *(Nhigh-Nlow)* (1+np.tanh((signal-Sstar)/alpha_S))/2.0
-                new_u= u+ffact_u*(-u*(u-1)*(u-r)-JI * signal *(signal>S0)*(u>0) - JA*6*u +J1* ( nearest_u_sum + alpha * second_u_sum))
+                new_u= u+ffact_u*(-u*(u-1)*(u-r)-JI * signal *(signal>S0)*(u>0) - JAprime*6*u +JA1* ( nearest_u_sum + alpha * second_u_sum))
                 #Notch signalling reporter
                 new_notch_reporter = notch_reporter + ffact_reporter*(signal-notch_reporter)
                 #store result
@@ -372,7 +385,7 @@ for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
         
                
         # =============================================================================
-        # RUN ANIMATION
+        # save packings final frame
         # =============================================================================        
         patches = [] 
         for c, delta in zip(cells.values(), delta_saved[0]):
@@ -409,56 +422,55 @@ for alpha in [0, 0.25, 0.5, 0.75, 1 ]:
         plt.savefig('./'+parameters+'/signal_final.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)
         plt.close(fig)
 
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #SNAPOSHOTS OF THE SIMULATION EVERY 2 HOURS
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        ##u     
-        # times_to_plot=[i*6 for i in range(40)] #60 minutes is 1 hour
-        # for i in times_to_plot:
-        #     fig,ax=plt.subplots()
-        #     p= PatchCollection(patches, cmap = cm.plasma , match_original=True)
-        #     ax.add_collection(p)
-        #     p.set_array(np.array(u_saved[i]))
-        #     p.set_clim([-0.1, 1.1])
-        #     ax.axis('equal')
-        #     plt.axis('off')
-        #     plt.savefig('./'+parameters+'/u_'+str(int(t_0+i*10/60))+'h.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)
-        
-        
-        # ##notch tot
-        # for i in times_to_plot:
-        #     fig,ax=plt.subplots()
-        #     p= PatchCollection(patches, cmap = cm.Purples , match_original=True)
-        #     ax.add_collection(p)
-        #     p.set_array(np.array(notch_saved[i]))
-        #     p.set_clim([0, 2.2])
-        #     ax.axis('equal')
-        #     plt.axis('off')
-        #     plt.savefig('./'+parameters+'/notch_'+str(int(t_0+i*10/60))+'h.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)
-        #     plt.close(fig)
-        
-        # ##delta tot
-        # for i in times_to_plot:
-        #     fig,ax=plt.subplots()
-        #     p= PatchCollection(patches, cmap = cm.Blues , match_original=True)
-        #     ax.add_collection(p)
-        #     p.set_array(np.array(delta_saved[i]))
-        #     p.set_clim([0, 1.1])
-        #     ax.axis('equal')
-        #     plt.axis('off')
-        #     plt.savefig('./'+parameters+'/delta_'+str(int(t_0+i*10/60))+'h.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)
-        #     plt.close(fig)
-        
-        # ##notch signal
-        # for i in times_to_plot:
-        #     fig,ax=plt.subplots()
-        #     p= PatchCollection(patches, cmap = cm.Reds , match_original=True)
-        #     ax.add_collection(p)
-        #     p.set_array(np.array(signal_saved[i]))
-        #     p.set_clim([0, 1.1])
-        #     ax.axis('equal')
-        #     plt.axis('off')
-        #     plt.savefig('./'+parameters+'/signal_'+str(int(t_0+i*10/60))+'h.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)
-        #     plt.close(fig)
+#assemble final snapshots together to generate the phase diagram of u and Notch signalling (Fig.S4J-J')
+fig=plt.figure(figsize=(25,25))
+columns=5
+rows=6
+J_values=[0, 0.015, 0.03, 0.045, 0.06, 0.15]
+J_values.reverse()
+alpha_values=[0, 0.25, 0.5, 0.75, 1]
+i=0
+for J in J_values:
+    for alpha in alpha_values:
+        i=i+1
+        try:
+            img=mpimg.imread('./Phase_diagram_FigS4J-J\'/'+condition+'_JI=0.35r=0.5tau_u=2_tauDN=6_totTime='+str(dt*N_times)+'h/Kcis=1500Ktrans=1800_Sstar=0.25alphaS=0.025Nlow=0.3Nhigh=2.2/J='+str(J)+'/range='+str(alpha)+'/u_final.png')
+            fig.add_subplot(rows,columns,i)
+            plt.axis('off')
+            plt.gca().set_axis_off()
+    
+            plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+            plt.margins(0,0)
+            plt.imshow(img,interpolation="nearest")
+        except FileNotFoundError:
+            print('file not present')
+fig1=plt.gcf()        
+fig1.savefig('./Phase_diagram_FigS4J-J\'/'+condition+'_JI=0.35r=0.5tau_u=2_tauDN=6_totTime='+str(dt*N_times)+'h/Kcis=1500Ktrans=1800_Sstar=0.25alphaS=0.025Nlow=0.3Nhigh=2.2/u_phase_diagram.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=130)
+
+fig=plt.figure(figsize=(25,25))
+columns=5
+rows=6
+J_values=[0, 0.015, 0.03, 0.045, 0.06, 0.15]
+J_values.reverse()
+alpha_values=[0, 0.25, 0.5, 0.75, 1]
+i=0
+for J in J_values:
+    for alpha in alpha_values:
+        i=i+1
+        try:
+            img=mpimg.imread('./Phase_diagram_FigS4J-J\'/'+condition+'_JI=0.35r=0.5tau_u=2_tauDN=6_totTime='+str(dt*N_times)+'h/Kcis=1500Ktrans=1800_Sstar=0.25alphaS=0.025Nlow=0.3Nhigh=2.2/J='+str(J)+'/range='+str(alpha)+'/signal_final.png')
+            fig.add_subplot(rows,columns,i)
+            plt.axis('off')
+            plt.gca().set_axis_off()
+    
+            plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+            plt.margins(0,0)
+            plt.imshow(img,interpolation="nearest")
+        except FileNotFoundError:
+            print('file not present')
+fig1=plt.gcf()        
+#plt.show()
+fig1.savefig('./Phase_diagram_FigS4J-J\'/'+condition+'_JI=0.35r=0.5tau_u=2_tauDN=6_totTime='+str(dt*N_times)+'h/Kcis=1500Ktrans=1800_Sstar=0.25alphaS=0.025Nlow=0.3Nhigh=2.2/signal_phase_diagram.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=130)
+
         
  

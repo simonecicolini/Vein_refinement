@@ -22,6 +22,7 @@ def save_snapshots(cells,
                    signal_saved,
                    u_saved,
                    notch_reporter_saved,
+                   norm_color_signal,
                    times_to_plot,
                    t_0, saving_path):
     
@@ -82,7 +83,7 @@ def save_snapshots(cells,
         p= PatchCollection(patches, cmap = cm.Reds , match_original=True)
         ax.add_collection(p)
         p.set_array(np.array(signal_saved[i]))
-        p.set_clim([0, 1.1])
+        p.set_clim([0, norm_color_signal])
         ax.axis('equal')
         plt.axis('off')
         plt.savefig(saving_path+'signal_'+str(int(t_0+i*fraction_saved/60))+'h.png',format='png',bbox_inches='tight', pad_inches = 0,dpi=120)

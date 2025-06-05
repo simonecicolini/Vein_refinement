@@ -75,6 +75,7 @@ def next_iter(u_values,
               r,
               JI,
               JA,
+              JAprime,
               N_low,
               N_high,
               D_high,
@@ -131,7 +132,7 @@ def next_iter(u_values,
             signal += extraSignalValue 
         #extra production if high notch signalling
         new_notch_tot += ffact_Notch *(N_high-N_low)* (1+np.tanh((signal-Sstar)/alphaS))/2.0
-        new_u= u+ffact_u*(-u*(u-1)*(u-r)-JI *(signal>S0)*(u>0)* signal + JA  *(nearest_u_sum-6*u))
+        new_u= u+ffact_u*(-u*(u-1)*(u-r)-JI *(signal>S0)*(u>0)* signal + JA*nearest_u_sum -6*JAprime*u)
         if extraVeinActivation:
             new_u+= -ffact_u* extraVeinActivationValue * (u-1)
         #Notch signalling reporter
@@ -152,7 +153,7 @@ def next_iter(u_values,
 # INITIALISATION
 # ============================================================================
 def run_sim(cells, 
-            r, JI, JA, 
+            r, JI, JA, JAprime,
             Kcis, Ktrans, 
             tau_u, tau_Notch, tau_reporter,
             N_low, N_high, D_high,
@@ -194,7 +195,7 @@ def run_sim(cells,
        
     for t in range(N_times):
        if t%fraction_saved ==0:
-           print(np.round(t/N_times*100,2), '%executed')
+            print(np.round(t/N_times*100,2), '%executed')
        u_values = np.array([c.u for c in cells.values()])
        delta_tot_values = np.array([c.delta_tot for c in cells.values()])
        notch_tot_values = np.array([c.notch_tot for c in cells.values()])
@@ -260,6 +261,7 @@ def run_sim(cells,
                                               r,
                                               JI,
                                               JA,
+                                              JAprime,
                                               N_low,
                                               N_high,
                                               D_high,
