@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun  5 17:59:43 2025
+
+@author: simonecicolini
+"""
+
 import pandas as pd
 import numpy as np
 import tissue_miner_tools as tml
@@ -62,9 +70,17 @@ ffact_Notch=dt/tau_Notch
 ffact_u=dt/tau_u
 ffact_reporter=dt/tau_reporter
 
+##comment/uncomment to select one of the following initial conditions
+initial_condition='standard' # WT, Fig.5B
+# initial_condition='cross_vein' #optogenetic artficial vein, Fig.7A top
+# initial_condition='broken_cross_vein' #optogenetic artficial vein, Fig.7A bottom
 
-folder='Results_WT'
-param='JA='+str(JA)+'r='+str(r)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'_sstar='+str(signal_activation_threshold)+'_sig_sens='+str(signal_activation_sensitivity)+'tauDN='+str(tau_Notch)+'tau_u='+str(tau_u)
+##comment/uncomment one of the following lines to select how Dtot and Ntot are passed to daughter cells at division
+xsplit=1.  #reference case Fig.5B
+# xsplit=np.pi/(np.pi + 2)  #Fig.S5H top
+
+folder='Results_WT_'+str(initial_condition)
+param='JA='+str(JA)+'r='+str(r)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'_Sstar='+str(signal_activation_threshold)+'_alphaS='+str(signal_activation_sensitivity)+'tauDN='+str(tau_Notch)+'tau_u='+str(tau_u)+'_xsplit='+str(xsplit)
 if folder not in os.listdir('./'):
     os.mkdir(folder)
 if param not in os.listdir('./'+folder):
@@ -94,7 +110,7 @@ p=np.polyfit(Vein.center_x,Vein.center_y,2)
 Y[:]=p[0]*X**2+p[1]*X+p[2]
 
 #calculate distance from L4
-DB_cells2['distL4']=0
+DB_cells2['distL4']=0.
 cx=DB_cells2[DB_cells2.frame==53].center_x.to_numpy()
 cy=DB_cells2[DB_cells2.frame==53].center_y.to_numpy()
 #calculate distance of a cell of coordinates (cx,cy) from the centerline of the vein
@@ -104,6 +120,7 @@ Arg=np.argmin(Dist,axis=1)
 Sgn=(cy-Y[Arg])<0
 Distmin=np.sqrt(Dist[range(Dist.shape[0]),Arg])
 Distmin[Sgn]=-Distmin[Sgn]
+# DB_cells2['distL4'] = DB_cells2['distL4'].astype(float)
 DB_cells2.loc[DB_cells2.frame==53,'distL4']=Distmin
     
 DB=DB_cells2; DB_L4=DB; DB_L4['dist_to_veinL4']=DB_L4['distL4'];
@@ -127,7 +144,7 @@ p=np.polyfit(Vein.center_x,Vein.center_y,2)
 Y[:]=p[0]*X**2+p[1]*X**1+p[2]#*X+p[3]
 
 #calculate distance from L5
-DB_cells2['distL5']=0
+DB_cells2['distL5']=0.
 cx=DB_cells2[DB_cells2.frame==53].center_x.to_numpy()
 cy=DB_cells2[DB_cells2.frame==53].center_y.to_numpy()
 #calculate distance of a cell of coordinates (cx,cy) from the centerline of the vein
@@ -159,7 +176,7 @@ X=np.linspace(xm,xM,int(xM-xm))
 Y=np.zeros((234,int(xM-xm)))
 #fit vein L3 at each time
 for fr in range(234):
-    print(fr)
+   #print(fr)
     y2=y20+fr/233*(y2f-y20)
     y1=y10+fr/233*(y1f-y10)
     L=L0+fr/233*(Lf-L0)
@@ -173,9 +190,9 @@ for fr in range(234):
     p=np.polyfit(Vein.center_x,Vein.center_y,2)
     Y[fr,:]=p[0]*X**2+p[1]*X+p[2]
 
-DB_cells2['dist']=0
+DB_cells2['dist']=0.
 for fr in range(234):
-    print(fr)
+    #print(fr)
     cx=DB_cells2[DB_cells2.frame==fr].center_x.to_numpy()
     cy=DB_cells2[DB_cells2.frame==fr].center_y.to_numpy()
     #calculate distance of a cell of coordinates (cx,cy) from the centerline of the vein
@@ -203,7 +220,7 @@ def set_reporter_value_L3(CELL_ID, DataB_f):
     this_dist=DataB_f[DataB_f.cell_id==CELL_ID].dist.values[0]
     return reporter_amplitude*(np.exp(-(this_dist-13)**2/2/sigma_reporter **2) + np.exp(-(this_dist+13)**2/2/sigma_reporter **2))
 
-DB['reporter']=0
+DB['reporter']=0.
 select_L4=(DB.distL4<30)&(DB.distL4>-30)&(DB.frame==53)
 DB.loc[select_L4, 'reporter']=DB[select_L4].apply(lambda x: set_reporter_value_L4(x.cell_id, DB[select_L4]) ,axis=1)
 
@@ -518,8 +535,8 @@ def next_iter(u_values,
 
 #_______________________________________________________________________________________________________
 #initialization:
-DB['Ntot']=Nlow;  DB['Nfree']=Nlow;  DB['NDtrans']=0; DB['Dtot']=0; DB['u']=0; DB['Dfree']=0;
-DB['Border']=0; DB['neighbors']=0
+DB['Ntot']=Nlow;  DB['Nfree']=Nlow;  DB['NDtrans']=0.; DB['Dtot']=0.; DB['u']=0.; DB['Dfree']=0.;
+DB['Border']=0; DB['neighbors'] = pd.Series([[]]*len(DB), dtype=object)
 
 #functions to fit the peaks in the histogram of DSRF concentration (used for initial conditions and for cells entering the field of view)
 def gauss(x, mu, sigma, A):
@@ -547,16 +564,16 @@ for FR in tqdm(range(233)):
     DB.loc[DB.frame==FR,'Dtot']=np.heaviside((1-(DB[DB.frame==FR].DSRF_Conc-m)/(M-m)),0)*(1-(DB[DB.frame==FR].DSRF_Conc-m)/(M-m))
     DB.loc[DB.frame==FR,'Dfree']=np.heaviside((1-(DB[DB.frame==FR].DSRF_Conc-m)/(M-m)),0)*(1-(DB[DB.frame==FR].DSRF_Conc-m)/(M-m))
 
-##initial condition for cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>80)&(DB.center_x<110),'u']=1 #large cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>80)&(DB.center_x<110),'Dtot']=1 #large cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>80)&(DB.center_x<110),'Dfree']=1 #large cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'u']=1 #small cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dtot']=1 #small cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dfree']=1 #small cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<50)&(DB.center_x>120)&(DB.center_x<140),'u']=1 #broken small cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<50)&(DB.center_x>120)&(DB.center_x<140),'Dtot']=1 #broken small cross vein
-# DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<50)&(DB.center_x>120)&(DB.center_x<140),'Dfree']=1 #broken small cross vein
+##initial condition for cross vein 
+if initial_condition=='cross_vein':
+    DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'u']=1. # cross vein
+    DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dtot']=1. # cross vein
+    DB.loc[(DB.frame==53)&(DB.dist>0)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dfree']=1. # cross vein
+
+if initial_condition=='broken_cross_vein':
+    DB.loc[(DB.frame==53)&(DB.dist>23)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'u']=1. #broken  cross vein
+    DB.loc[(DB.frame==53)&(DB.dist>23)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dtot']=1. #broken  cross vein
+    DB.loc[(DB.frame==53)&(DB.dist>23)&(DB.dist<70)&(DB.center_x>120)&(DB.center_x<140),'Dfree']=1. #broken  cross vein
 
 #=============================================================
 #RUN SIMULATION
@@ -719,7 +736,6 @@ for FRAME in tqdm(range(starting_frame,233)):
                                                                     'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[~DB_f.cell_id.isin(disappearing_cells)][['u','Dfree',
                                                                                                                                           'Nfree','Dtot','Ntot','NDtrans','reporter']].values
     except ValueError :
-        print('error frame'+ str(FRAME))
         list_next_time=DB.loc[(DB.frame==FRAME+1)&(DB.cell_id.isin(list_cells_t))].cell_id.unique()
         list_this_time=DB_f[~DB_f.cell_id.isin(disappearing_cells)].cell_id.unique()
         list_difference = [item for item in list_this_time if item not in list_next_time]
@@ -732,10 +748,10 @@ for FRAME in tqdm(range(starting_frame,233)):
     for CELL in disappearing_cells_division :         
         daughter1, daughter2=DB_f[DB_f.cell_id==CELL].left_daughter_cell_id.unique()[0],DB_f[DB_f.cell_id==CELL].right_daughter_cell_id.unique()[0]
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter1),['Dfree',
-                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[DB_f.cell_id==CELL][['Dfree',
+                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]= xsplit * DB_f[DB_f.cell_id==CELL][['Dfree',
                                                                                                                          'Nfree','Dtot','Ntot','NDtrans','reporter']].values[0]
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter2),['Dfree',
-                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[DB_f.cell_id==CELL][['Dfree',
+                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]= xsplit * DB_f[DB_f.cell_id==CELL][['Dfree',
                                                                                                                          'Nfree','Dtot','Ntot','NDtrans','reporter']].values[0]
 
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter1),'u']=DB_f[DB_f.cell_id==CELL]['u'].values[0]

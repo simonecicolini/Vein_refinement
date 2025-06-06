@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun  5 19:17:04 2025
+
+@author: simonecicolini
+"""
+
 import pandas as pd
 import numpy as np
 import tissue_miner_tools as tml
@@ -65,7 +73,7 @@ ffact_u=dt/tau_u
 ffact_reporter=dt/tau_reporter
 
 folder='Results_Dumpy'
-param='JA='+str(JA)+'r='+str(r)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'_sstar='+str(signal_activation_threshold)+'_sig_sens='+str(signal_activation_sensitivity)+'tauDN='+str(tau_Notch)+'tau_u='+str(tau_u)
+param='JA='+str(JA)+'r='+str(r)+'Nlow='+str(Nlow)+'Nhigh='+str(Nhigh)+'_Sstar='+str(signal_activation_threshold)+'_alphaS='+str(signal_activation_sensitivity)+'tauDN='+str(tau_Notch)+'tau_u='+str(tau_u)
 if folder not in os.listdir('./'):
     os.mkdir(folder)
 if param not in os.listdir('./'+folder):
@@ -361,8 +369,8 @@ def next_iter(u_values,
 
 #_______________________________________________________________________________________________________
 #initialization:
-DB['Ntot']=Nlow;  DB['Nfree']=Nlow;  DB['NDtrans']=0; DB['Dtot']=0; DB['u']=0; DB['Dfree']=0;  DB['reporter']=0
-DB['Border']=0; DB['neighbors']=0
+DB['Ntot']=Nlow;  DB['Nfree']=Nlow;  DB['NDtrans']=0.; DB['Dtot']=0.; DB['u']=0.; DB['Dfree']=0.;  DB['reporter']=0.
+DB['Border']=0; DB['neighbors']=pd.Series([[]]*len(DB), dtype=object)
 #functions to fit the peaks in the histogram of DSRF concentration
 m=448. ##position first DSRF peak
 M=1128. ##position second DSRF peak at initial time
@@ -551,7 +559,6 @@ for FRAME in tqdm(range(starting_frame,186)):
                                                                     'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[~DB_f.cell_id.isin(disappearing_cells)][['u','Dfree',
                                                                                                                                           'Nfree','Dtot','Ntot','NDtrans','reporter']].values
     except ValueError :
-        print('error frame'+ str(FRAME))
         list_next_time=DB.loc[(DB.frame==FRAME+1)&(DB.cell_id.isin(list_cells_t))].cell_id.unique()
         list_this_time=DB_f[~DB_f.cell_id.isin(disappearing_cells)].cell_id.unique()
         list_difference = [item for item in list_this_time if item not in list_next_time]
@@ -564,10 +571,10 @@ for FRAME in tqdm(range(starting_frame,186)):
     for CELL in disappearing_cells_division :         
         daughter1,daughter2=DB_f[DB_f.cell_id==CELL].left_daughter_cell_id.unique()[0],DB_f[DB_f.cell_id==CELL].right_daughter_cell_id.unique()[0]
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter1),['Dfree',
-                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=1*DB_f[DB_f.cell_id==CELL][['Dfree',
+                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[DB_f.cell_id==CELL][['Dfree',
                                                                                                                          'Nfree','Dtot','Ntot','NDtrans','reporter']].values[0]
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter2),['Dfree',
-                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=1*DB_f[DB_f.cell_id==CELL][['Dfree',
+                                                            'Nfree','Dtot','Ntot','NDtrans','reporter']]=DB_f[DB_f.cell_id==CELL][['Dfree',
                                                                                                                          'Nfree','Dtot','Ntot','NDtrans','reporter']].values[0]
 
         DB.loc[(DB.frame==FRAME+1)&(DB.cell_id==daughter1),'u']=DB_f[DB_f.cell_id==CELL]['u'].values[0]
